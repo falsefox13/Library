@@ -72,22 +72,22 @@ class User(UserMixin, db.Model):
 
     def borrow_book(self, book):
         if self.logs.filter(Log.returned == 0, Log.return_timestamp < datetime.now()).count() > 0:
-            return False, u"无法借阅,你有超期的图书未归还"
+            return False, u"Unable to borrow, you have not returned the expired books"
         if self.borrowing(book):
-            return False, u'貌似你已经借阅了这本书!!'
+            return False, u'It looks like you have borrowed this book!'
         if not book.can_borrow():
-            return False, u'这本书太火了,我们已经没有馆藏了,请等待别人归还以后再来借阅'
+            return False, u'This book is too popular, please wait for someone to return it later'
 
         db.session.add(Log(self, book))
-        return True, u'你成功GET到了一本 %s' % book.title
+        return True, u'You successfully got a copy %s' % book.title
 
     def return_book(self, log):
         if log.returned == 1 or log.user_id != self.id:
-            return False, u'没有找到这条记录'
+            return False, u'Did not find this record'
         log.returned = 1
         log.return_timestamp = datetime.now()
         db.session.add(log)
-        return True, u'你归还了一本 %s' % log.book.title
+        return True, u'You returned a copy %s' % log.book.title
 
     def avatar_url(self, _external=False):
         if self.avatar:
@@ -288,8 +288,7 @@ class Comment(db.Model):
 
 book_tag = db.Table('books_tags',
                     db.Column('book_id', db.Integer, db.ForeignKey('books.id')),
-                    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
-                    )
+                    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')))
 
 
 class Tag(db.Model):
