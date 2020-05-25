@@ -68,10 +68,10 @@ class User(UserMixin, db.Model):
         return self.logs.filter_by(book_id=book.id, returned=0).first()
 
     def can_borrow_book(self):
-        return self.logs.filter(Log.returned == 0, Log.return_timestamp < datetime.now()).count() == 0
+        return self.logs.filter(Log.return_request == 0, Log.return_timestamp < datetime.now()).count() == 0
 
     def borrow_book(self, book):
-        if self.logs.filter(Log.returned == 0, Log.return_timestamp < datetime.now()).count() > 0:
+        if self.logs.filter(Log.return_request == 0, Log.return_timestamp < datetime.now()).count() > 0:
             return False, u"Unable to borrow, you have not returned the expired books"
         if self.borrowing(book):
             return False, u'It looks like you have borrowed this book!'
@@ -85,6 +85,14 @@ class User(UserMixin, db.Model):
         if log.returned == 1 or log.user_id != self.id:
             return False, u'Did not find this record'
         log.returned = 1
+        log.return_timestamp = datetime.now()
+        db.session.add(log)
+        return True, u'You returned a copy %s' % log.book.title
+
+    def create_return_request(self, log):
+        if log.returned == 1 or log.user_id != self.id or log.return_request == 1:
+            return False, u'Did not find this record'
+        log.return_request = 1
         log.return_timestamp = datetime.now()
         db.session.add(log)
         return True, u'You returned a copy %s' % log.book.title
@@ -255,6 +263,7 @@ class Log(db.Model):
     borrow_timestamp = db.Column(db.DateTime, default=datetime.now())
     return_timestamp = db.Column(db.DateTime, default=datetime.now())
     returned = db.Column(db.Boolean, default=0)
+    return_request = db.Column(db.Boolean, default=0)
 
     def __init__(self, user, book):
         self.user = user
@@ -288,7 +297,8 @@ class Comment(db.Model):
 
 book_tag = db.Table('books_tags',
                     db.Column('book_id', db.Integer, db.ForeignKey('books.id')),
-                    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id')))
+                    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'))
+                    )
 
 
 class Tag(db.Model):

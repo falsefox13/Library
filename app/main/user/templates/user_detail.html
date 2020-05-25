@@ -95,9 +95,15 @@
                             <td class="hidden-xs">{{ log.borrow_timestamp.strftime('%d %B %Y - %H:%M:%S') }}</td>
                             <td class="hidden-xs">{{ log.return_timestamp.strftime('%d %B %Y - %H:%M:%S') }}</td>
                             {%- if current_user.is_authenticated and current_user.id==user.id -%}
-                                <td><a class="btn btn-primary"
-                                       href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
-                                    Return</a></td>
+                                {% if log.return_request == false %}
+                                    <td><a class="btn btn-primary"
+                                           href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
+                                        Return</a></td>
+                                {% else %}
+                                    <td><a class="btn  btn-secondary" disabled="disabled">
+                                        Wait
+                                    </a></td>
+                                {% endif %}
                             {%- endif -%}
                         </tr>
                     {% endfor %}

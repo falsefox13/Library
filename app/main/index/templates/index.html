@@ -39,10 +39,16 @@
                 {% if current_user.is_authenticated %}
                     {% with log =current_user.borrowing(book) %}
                         {% if log %}
-                            <td><a class="btn btn-primary"
-                                   href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
-                                Return
-                            </a></td>
+                            {% if log.return_request == false %}
+                                <td><a class="btn btn-primary"
+                                        href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
+                                    Return
+                                </a></td>
+                            {% else %}
+                                <td><a class="btn  btn-secondary" disabled="disabled">
+                                Wait
+                                </a></td>
+                            {% endif %}
                         {% else %}
                             <td><a class="btn btn-success"
                                    href="{{ url_for('log.book_borrow',book_id=book.id,next=request.path) }}"

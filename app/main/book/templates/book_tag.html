@@ -64,15 +64,25 @@
                     <td class="hidden-xs">{{ book.logs.count() }}</td>
                     {%- if current_user.is_authenticated -%}
                         <td>
-                            {% with borrowing_log=current_user.borrowing(book) %}
-                                {%- if borrowing_log -%}
-                                    <a class="btn btn-primary"
-                                       href="{{ url_for('log.book_return',log_id=borrowing_log.id,next=request.full_path) }}">Return</a>
-                                {%- else -%}
-                                    <a class="btn btn-success"
-                                       href="{{ url_for('log.book_borrow',book_id=book.id,next=request.full_path) }}"
-                                            {%- if not book.can_borrow() %} disabled="disabled"{%- endif -%}>Borrow</a>
-                                {%- endif -%}
+                            {% with log =current_user.borrowing(book) %}
+                                {% if log %}
+                                    {% if log.return_request == false %}
+                                        <td><a class="btn btn-primary"
+                                                href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
+                                            Return
+                                        </a></td>
+                                    {% else %}
+                                        <td><a class="btn  btn-secondary" disabled="disabled">
+                                        Wait
+                                        </a></td>
+                                    {% endif %}
+                                {% else %}
+                                    <td><a class="btn btn-success"
+                                           href="{{ url_for('log.book_borrow',book_id=book.id,next=request.path) }}"
+                                           {% if not book.can_borrow() %}disabled="disabled"{% endif %}>
+                                        Borrow
+                                    </a></td>
+                                {% endif %}
                             {% endwith %}
                             {% if book.hidden %}
                                 {%- if current_user.is_administrator() -%}

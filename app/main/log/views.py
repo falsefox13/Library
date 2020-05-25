@@ -36,7 +36,7 @@ def book_return():
     if log is None:
         flash(u'Did not find this record', 'warning')
     else:
-        result, message = current_user.return_book(the_log)
+        result, message = current_user.create_return_request(the_log)
         flash(message, 'success' if result else 'danger')
         db.session.commit()
     return redirect(request.args.get('next') or url_for('book.detail', book_id=log_id))
