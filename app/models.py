@@ -24,6 +24,10 @@ class User(UserMixin, db.Model):
     avatar = db.Column(db.String(128))
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
     balance = db.Column(db.Integer())
+    transactions = db.relationship('Transaction',
+                           backref=db.backref('user', lazy='joined'),
+                           lazy='dynamic',
+                           cascade='all, delete-orphan')
 
     @property
     def password(self):
@@ -91,11 +95,15 @@ class User(UserMixin, db.Model):
         if log.returned == 1 or not self.can(Permission.APPROVE_REQUEST_RETURN):
             return False, u'Did not find this record'
         log.returned = 1
-        log.return_timestamp = datetime.now()
         user = User.query.get(log.user_id)
         book = Book.query.get(log.book_id)
-        transaction = Transaction(user.id, book.id, book.price, Operations.RETURN_BOOK)
-        user.balance += book.price
+        delata_time = log.return_timestamp - log.borrow_timestamp
+        if delata_time.days == 0:
+            delata_time = timedelta(days=1)
+        total_sum = book.price - (book.price / 100) * delata_time.days
+        transaction = Transaction(user.id, book.id, total_sum, Operations.RETURN_BOOK)
+        user.balance += total_sum
+        db.session.add(user)
         db.session.add(transaction)
         db.session.add(log)
         return True, u'You returned a copy %s' % log.book.title
@@ -211,7 +219,10 @@ class Book(db.Model):
     catalog = db.deferred(db.Column(db.Text, default=""))
     catalog_html = db.deferred(db.Column(db.Text))
     hidden = db.Column(db.Boolean, default=0)
-
+    transactions = db.relationship('Transaction',
+                           backref=db.backref('book', lazy='joined'),
+                           lazy='dynamic',
+                           cascade='all, delete-orphan')
     logs = db.relationship('Log',
                            backref=db.backref('book', lazy='joined'),
                            lazy='dynamic',
@@ -339,6 +350,7 @@ class Transaction(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     descr = db.Column(db.String(200))
     sum = db.Column(db.Integer)
+
 
     def __init__(self, user_id, book_id, sum, operation):
         self.user_id = user_id
