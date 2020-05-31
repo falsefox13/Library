@@ -86,16 +86,15 @@
                             {% endwith %}
                             {% if book.hidden %}
                                 {%- if current_user.is_administrator() -%}
-                                    <a type="button" class="btn btn-info"
-                                       href="{{ url_for('book.put_back',book_id=book.id,next=request.full_path) }}">Restore</a>
+                                    <td><a type="button" class="btn btn-info"
+                                           href="{{ url_for('book.put_back',book_id=book.id,next=request.full_path) }}">Restore</a></td>
                                 {%- endif -%}
                             {% else %}
                                 {%- if current_user.can(Permission.DELETE_BOOK) -%}
-                                    <a type="button" class="btn btn-danger"
-                                       href="{{ url_for('book.delete',book_id=book.id,next=request.full_path) }}">Delete</a>
+                                    <td><a type="button" class="btn btn-danger"
+                                           href="{{ url_for('book.delete',book_id=book.id,next=request.full_path) }}">Delete</a></td>
                                 {%- endif -%}
                             {%- endif -%}
-                        </td>
                     {%- endif -%}
                 </tr>
             {%- endfor -%}
