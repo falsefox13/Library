@@ -43,7 +43,7 @@
                 <td class="hidden-xs">{{ book.numbers }} / {{ book.can_borrow_number() }}</td>
                 <td class="hidden-xs">{{ book.logs.count() }}</td>
                 {%- if current_user.is_authenticated -%}
-                    <td>
+
                         {% with log =current_user.borrowing(book) %}
                         {% if log %}
                             {% if log.return_request == false %}
@@ -66,16 +66,16 @@
                     {% endwith %}
                         {% if book.hidden %}
                             {%- if current_user.is_administrator() -%}
-                                    <td><a type="button" class="btn btn-info"
-                                   href="{{ url_for('book.put_back',book_id=book.id,next=request.full_path) }}">Restore book</a></td>
+                               <td> <a type="button" class="btn btn-info"
+                                       href="{{ url_for('book.put_back',book_id=book.id,next=request.full_path) }}">Restore book</a></td>
                             {%- endif -%}
                         {% else %}
                             {%- if current_user.can(Permission.DELETE_BOOK) -%}
                                 <td><a type="button" class="btn btn-danger"
-                                       href="{{ url_for('book.delete',book_id=book.id,next=request.full_path) }}">Delete book</a></td>
+                                   href="{{ url_for('book.delete',book_id=book.id,next=request.full_path) }}">Delete book</a></td>
                             {%- endif -%}
                         {%- endif -%}
-                    </td>
+                    
                 {%- endif -%}
             </tr>
         {%- endfor -%}
