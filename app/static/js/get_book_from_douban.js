@@ -1,7 +1,3 @@
-/**
- * Created by Akari on 5/5/16.
- */
-
 (function () {
     function createMessage(message, type) {
         var type_convert = {
@@ -45,7 +41,7 @@
         var isbn = document.getElementById('isbn').value;
 
         if (isNaN(isbn) || isbn.length != 13) {
-            createMessage('请填写正确的13位数字ISBN', 'warning');
+            createMessage('Please fill in the correct 13-digit ISBN', 'warning');
         }
         else {
             var douban_API = 'http://api.douban.com/v2/book/isbn/';
@@ -55,9 +51,9 @@
                         'tags', 'pages', 'price', 'binding', 'summary', 'catalog'].join(',')
                 })
                 .done(function (data) {
-                    if (data.code) {//出现状况了
+                    if (data.code) {
                         if (data.code == '6000') {
-                            createMessage('在豆瓣没找这本书', 'danger');
+                            createMessage('Did not find this book', 'danger');
                         }
                         else {
                             createMessage(data.msg, 'danger');
@@ -82,14 +78,14 @@
                         document.getElementById('binding').value = data.binding;
                         document.getElementById('flask-pagedown-summary').value = data.summary.replace(/\n/g, "\n\n");
                         document.getElementById('flask-pagedown-catalog').value = data.catalog.replace(/\n/g, "\n\n");
-                        createMessage('载入成功', 'success');
+                        createMessage('Successfully loaded', 'success');
                     }
                 })
                 .fail(function (data) {
                     if (data.status == '404')
-                        createMessage('从豆瓣加载书籍信息失败!', 'danger');
+                        createMessage('Failed to load book information!', 'danger');
                     else
-                        createMessage(datas.tatusText, 'danger');
+                        createMessage(data.statusText, 'danger');
                 });
 
         }
