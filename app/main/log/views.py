@@ -13,6 +13,7 @@ from ..decorators import permission_required
 def book_approve_return():
     log_id = request.args.get('log_id')
     book_id = request.args.get('book_id')
+    with_fine = request.args.get('fine')
     the_log = None
     if log_id:
         the_log = Log.query.get(log_id)
@@ -21,7 +22,7 @@ def book_approve_return():
     if the_log is None:
         flash(u'Did not find this record', 'warning')
     else:
-        result, message = current_user.approve_return_book(the_log)
+        result, message = current_user.approve_return_book(the_log, with_fine)
         flash(message, 'success' if result else 'danger')
         db.session.commit()
     return redirect(request.args.get('next') or url_for('book.detail', book_id=log_id))

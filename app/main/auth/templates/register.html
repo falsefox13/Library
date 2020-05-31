@@ -25,6 +25,7 @@
                         {{ wtf.form_field(form.name) }}
                         {{ wtf.form_field(form.password) }}
                         {{ wtf.form_field(form.password2) }}
+                        {{ wtf.form_field(form.category) }}
                         <input class="btn btn-success" id="submit" name="submit" type="submit" value="Register">
                         <a href="{{ url_for('auth.login') }}" class="btn btn-info pull-right">Already have an account? Log in -></a>
                     </form>

@@ -56,7 +56,7 @@
 
     <div class="well well-lg" id="log">
         <ul class="nav nav-tabs" role="tablist">
-            {% if request.args.get('show',0)=='0' %}
+            {%if request.args.get('show',0)=='0' or request.args.get('show',0)==0 %}
                 <li role="presentation" class="active"><a href="#log" role="tab">Current borrowing record</a></li>
                 <li role="presentation"><a href="{{ url_for('user.detail',user_id=user.id,show=1,_anchor='log') }}"
                                            role="tab">Historical borrowing records</a>
@@ -84,7 +84,7 @@
         </ul>
         <!-- Tab panes -->
         <div class="tab-content row">
-            {% if request.args.get('show',0)=='0' %}
+            {% if request.args.get('show',0)=='0' or request.args.get('show',0)==0 %}
                 <table class="table table-striped table-hover">
                     <thead>
                     <tr>

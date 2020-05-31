@@ -22,8 +22,9 @@ class User(UserMixin, db.Model):
     about_me = db.deferred(db.Column(db.Text, nullable=True))
     about_me_html = db.deferred(db.Column(db.Text, nullable=True))
     avatar = db.Column(db.String(128))
+    category = db.Column(db.Integer)
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
-    balance = db.Column(db.Integer())
+    balance = db.Column(db.Float())
     transactions = db.relationship('Transaction',
                            backref=db.backref('user', lazy='joined'),
                            lazy='dynamic',
@@ -48,6 +49,18 @@ class User(UserMixin, db.Model):
             if self.role is None:
                 self.role = Role.query.filter_by(default=True).first()
         self.member_since = datetime.now()
+
+    def has_discount(self):
+        if self.category != 0:
+            return True
+        else:
+            return False
+
+    def calculate_discount(self, sum):
+        if self.category == Category.STUDENT:
+            return sum * 0.1
+        elif self.category == Category.LARGE_FAMILIES:
+            return sum * 0.5
 
     def can(self, permissions):
         return self.role is not None and \
@@ -91,7 +104,7 @@ class User(UserMixin, db.Model):
         db.session.add(Log(self, book))
         return True, u'You successfully got a copy %s' % book.title
 
-    def approve_return_book(self, log):
+    def approve_return_book(self, log, with_fine):
         if log.returned == 1 or not self.can(Permission.APPROVE_REQUEST_RETURN):
             return False, u'Did not find this record'
         log.returned = 1
@@ -100,11 +113,21 @@ class User(UserMixin, db.Model):
         delata_time = log.return_timestamp - log.borrow_timestamp
         if delata_time.days == 0:
             delata_time = timedelta(days=1)
-        total_sum = book.price - (book.price / 100) * delata_time.days
+        total_sum =  book.price - (book.price / 100) * delata_time.days
         transaction = Transaction(user.id, book.id, total_sum, Operations.RETURN_BOOK)
         user.balance += total_sum
-        db.session.add(user)
         db.session.add(transaction)
+        if with_fine == '1':
+            user.balance -= book.price - total_sum
+            fine_transaction = Transaction(user.id, book.id, total_sum, Operations.FINE)
+            db.session.add(fine_transaction)
+        else:
+            if(user.has_discount()):
+                discount = user.calculate_discount(total_sum)
+                discount_transaction = Transaction(user.id, book.id, discount, Operations.DISCOUNT)
+                user.balance += discount
+                db.session.add(discount_transaction)
+        db.session.add(user)
         db.session.add(log)
         return True, u'You returned a copy %s' % log.book.title
 
@@ -341,7 +364,12 @@ class Tag(db.Model):
 class Operations(object):
     RETURN_BOOK = 0x01
     BORROW_BOOK = 0x02
-    FINE = 0x3
+    FINE = 0x03
+    DISCOUNT = 0x04
+
+class Category(object):
+    STUDENT = 0x01
+    LARGE_FAMILIES = 0x02
 
 class Transaction(db.Model):
     __tablename__ = 'transactions'
@@ -349,7 +377,7 @@ class Transaction(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     descr = db.Column(db.String(200))
-    sum = db.Column(db.Integer)
+    sum = db.Column(db.String(200))
 
 
     def __init__(self, user_id, book_id, sum, operation):
@@ -357,8 +385,14 @@ class Transaction(db.Model):
         self.book_id = book_id
         self.sum = sum
         if operation == Operations.RETURN_BOOK:
+            self.sum = "+" + str(sum)
             self.descr = "Return book"
         elif operation == Operations.BORROW_BOOK:
+            self.sum = "-" + str(sum)
             self.descr = "Borrow book"
         elif operation == Operations.FINE:
+            self.sum = "-" + str(sum)
             self.descr = "Payment of the fine"
+        elif operation == Operations.DISCOUNT:
+            self.sum = "+" + str(sum)
+            self.descr = "Discount"

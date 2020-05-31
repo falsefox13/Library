@@ -2,7 +2,7 @@
 from app import db
 from app.models import User
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms import ValidationError
 from wtforms.validators import Email, Length, DataRequired, EqualTo
 
@@ -28,6 +28,10 @@ class RegistrationForm(FlaskForm):
                                          EqualTo('password2', message=u'Passwords do not match'),
                                          Length(6, 32)])
     password2 = PasswordField(u'Confirm password', validators=[DataRequired(message=u"Please confirm again!")])
+    category = SelectField('Category',
+                        choices=[("0", "none"),
+                                 ("1", 'Student'),
+                                 ("2", 'Large families')])
     submit = SubmitField(u'Submit')
 
     def validate_email(self, filed):
