@@ -59,17 +59,25 @@
                             <td class="hidden-xs">
                             {% if current_user.id == log.user.id %}
                                 {% if log.return_request == false %}
-                                    <button class="btn btn-primary btn-block"
+                                    <a class="btn btn-primary btn-block"
                                        href="{{ url_for('log.book_return',log_id=log.id,next=request.path) }}">
                                         Return
-                                    </button>
-                                {% else %}
+                                    </a>
+                                {% elif not current_user.can(Permission.APPROVE_REQUEST_RETURN)%}
                                     <a class="btn  btn-secondary  btn-block" disabled="disabled">
                                         Wait
                                     </a>
+                                {% else %}
+                                    <a class="btn btn-success btn-block"
+                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path) }}">Approve</a>
                                 {% endif %}
                             {% else %}
-                                <button class="btn btn-warning btn-block" disabled>To be returned</button>
+                                {% if current_user.can(Permission.APPROVE_REQUEST_RETURN) and log.return_request == true %}
+                                    <a class="btn btn-success btn-block"
+                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path) }}">Approve</a>
+                                {% else %}
+                                    <button class="btn btn-warning btn-block" disabled>To be returned</button>
+                                {% endif %}
                             {% endif %}
                         {%- endif -%}
                         </td>

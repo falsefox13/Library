@@ -23,6 +23,7 @@ class User(UserMixin, db.Model):
     about_me_html = db.deferred(db.Column(db.Text, nullable=True))
     avatar = db.Column(db.String(128))
     member_since = db.Column(db.DateTime(), default=datetime.utcnow)
+    balance = db.Column(db.Integer())
 
     @property
     def password(self):
@@ -77,15 +78,25 @@ class User(UserMixin, db.Model):
             return False, u'It looks like you have borrowed this book!'
         if not book.can_borrow():
             return False, u'This book is too popular, please wait for someone to return it later'
-
+        if self.balance < book.price:
+            return False, u'Not enough money'
+        self.balance -= book.price
+        transaction = Transaction(self.id, book.id, book.price, Operations.BORROW_BOOK)
+        db.session.add(transaction)
+        db.session.add(self)
         db.session.add(Log(self, book))
         return True, u'You successfully got a copy %s' % book.title
 
-    def return_book(self, log):
-        if log.returned == 1 or log.user_id != self.id:
+    def approve_return_book(self, log):
+        if log.returned == 1 or not self.can(Permission.APPROVE_REQUEST_RETURN):
             return False, u'Did not find this record'
         log.returned = 1
         log.return_timestamp = datetime.now()
+        user = User.query.get(log.user_id)
+        book = Book.query.get(log.book_id)
+        transaction = Transaction(user.id, book.id, book.price, Operations.RETURN_BOOK)
+        user.balance += book.price
+        db.session.add(transaction)
         db.session.add(log)
         return True, u'You returned a copy %s' % log.book.title
 
@@ -117,6 +128,8 @@ class User(UserMixin, db.Model):
                          tags=allowed_tags, strip=True))
 
 
+
+
 db.event.listen(User.about_me, 'set', User.on_changed_about_me)
 
 
@@ -141,6 +154,7 @@ class Permission(object):
     ADD_BOOK = 0x40
     DELETE_BOOK = 0x80
     ADMINISTER = 0x100
+    APPROVE_REQUEST_RETURN = 0x200
 
 
 class Role(db.Model):
@@ -312,3 +326,27 @@ class Tag(db.Model):
 
     def __repr__(self):
         return u'<Tag %s>' % self.name
+
+class Operations(object):
+    RETURN_BOOK = 0x01
+    BORROW_BOOK = 0x02
+    FINE = 0x3
+
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
+    descr = db.Column(db.String(200))
+    sum = db.Column(db.Integer)
+
+    def __init__(self, user_id, book_id, sum, operation):
+        self.user_id = user_id
+        self.book_id = book_id
+        self.sum = sum
+        if operation == Operations.RETURN_BOOK:
+            self.descr = "Return book"
+        elif operation == Operations.BORROW_BOOK:
+            self.descr = "Borrow book"
+        elif operation == Operations.FINE:
+            self.descr = "Payment of the fine"

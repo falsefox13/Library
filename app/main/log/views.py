@@ -7,6 +7,25 @@ from . import log
 from ..decorators import permission_required
 
 
+@log.route('/approve/')
+@login_required
+@permission_required(Permission.APPROVE_REQUEST_RETURN)
+def book_approve_return():
+    log_id = request.args.get('log_id')
+    book_id = request.args.get('book_id')
+    the_log = None
+    if log_id:
+        the_log = Log.query.get(log_id)
+    if book_id:
+        the_log = Log.query.filter_by(user_id=current_user.id, book_id=book_id).first()
+    if the_log is None:
+        flash(u'Did not find this record', 'warning')
+    else:
+        result, message = current_user.approve_return_book(the_log)
+        flash(message, 'success' if result else 'danger')
+        db.session.commit()
+    return redirect(request.args.get('next') or url_for('book.detail', book_id=log_id))
+
 @log.route('/borrow/')
 @login_required
 @permission_required(Permission.BORROW_BOOK)
