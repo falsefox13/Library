@@ -76,9 +76,9 @@
                             {% else %}
                                 {% if current_user.can(Permission.APPROVE_REQUEST_RETURN) and log.return_request == true %}
                                     <a class="btn btn-success btn-block"
-                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path) }}">Good</a>
+                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path, fine=0) }}">Good</a>
                                     <a class="btn btn-danger btn-block"
-                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path) }}">Bad</a>
+                                    href="{{ url_for('log.book_approve_return',log_id=log.id,next=request.path, fine=1) }}">Bad</a>
                                 {% else %}
                                     <button class="btn btn-warning btn-block" disabled>To be returned</button>
                                 {% endif %}
